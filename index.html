@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Reskyra Musical Horn</title>
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; font-family: 'Arial', sans-serif; }
+        .app-container { width: 100vw; height: 100vh; background-image: url('1001228322.png'); background-size: 100% 100%; position: relative; }
+        .status-display { position: absolute; top: 16.5%; left: 11%; width: 78%; display: flex; justify-content: space-between; background: rgba(0, 0, 0, 0.85); padding: 6px 15px; border: 1px solid #00fbff; color: #00fbff; font-size: 11px; font-weight: bold; border-radius: 4px; text-shadow: 0 0 5px #00fbff; }
+        .list-nada-container { position: absolute; top: 22%; left: 10.5%; width: 79%; height: 40%; overflow-y: auto; display: flex; flex-direction: column; padding: 5px; scroll-behavior: smooth; }
+        .item-nada { display: flex; align-items: center; background: rgba(255, 255, 255, 0.05); margin-bottom: 5px; padding: 12px; border-radius: 4px; color: #fff; font-size: 11px; font-weight: bold; border-left: 4px solid #333; text-transform: uppercase; }
+        .item-nada.active { border-left: 4px solid #00fbff; background: rgba(0, 251, 255, 0.2); color: #00fbff; }
+        .controls-layer { position: absolute; bottom: 65px; left: 50%; transform: translateX(-50%); width: 85%; display: flex; flex-direction: column; gap: 18px; }
+        .row { display: flex; justify-content: space-around; }
+        .btn-target { width: 78px; height: 78px; border-radius: 50%; background: rgba(255, 0, 0, 0); border: none; cursor: pointer; }
+        .list-nada-container::-webkit-scrollbar { width: 0px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="status-display">
+        <span id="stat-mode">MODE: STOP</span>
+        <span id="stat-tempo">SPEED: 1.0x</span>
+    </div>
+    <div class="list-nada-container" id="playlist"></div>
+    <div class="controls-layer">
+        <div class="row">
+            <button class="btn-target" onclick="control('PREV')"></button>
+            <button class="btn-target" onclick="control('PLAY')"></button>
+            <button class="btn-target" onclick="control('NEXT')"></button>
+        </div>
+        <div class="row">
+            <button class="btn-target" onclick="control('TEMPO_PREV')"></button>
+            <button class="btn-target" onclick="control('STOP')"></button>
+            <button class="btn-target" onclick="control('TEMPO_UP')"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const songNames = [
+        "Aku Suka Nonton Sound Horeg 24 Not", "Barudak Phonk 12 Not", "Bete 36 Not", "Birunya Cinta 36 Not",
+        "Calon Mantu Idaman", "Campuran 12 Not", "Cari Berkah 24 Not", "Chicken Dance 24 Not",
+        "Cindai 18 Not", "Dj Lulo Elektrone 12 Not", "Doraemon 36 Not", "Ego Wong Tua 12 Not",
+        "Es Lilin ZetaProject", "Ff X Merah Jambu 12 Not", "Genit 36 Not", "Gulali Azk 36 Not",
+        "Hamil Duluan X Malam Pagi 24 Not", "India Okdj 36 Not", "Jablay AzkDuino", "Janda Bodong 24 Not",
+        "Janda bodong AzkDuino", "Jeger 36 Not", "Jika Itu Memang Terbaik", "Kalah Materi",
+        "Karmila ZetaProject 18 Not", "Kelingan Mantan 24 Not", "Kelingan Mantan Azk 36 Not", "Konco Mesra 36 Not",
+        "Lathi 24 Not", "Maumere Okdj 36 Not", "Maya 24 Not", "Mimi Cucu 36 Not", "Ngamen 4 12 Not",
+        "Ngapain Repot 36 Not Okdj", "Okdj 18 Not Sambung Menyambung", "One In A Mililon 12 Not",
+        "Pagiku Cerahku 36 Not", "Pikiran Ku Kepas 24 Not", "Pikiranku Lepas X Mimi Cucu",
+        "Pildun X Jika Itu Memang Terbaik 36 Not", 
+        "Re Rera Rera 24 Not",              // 41
+        "Sabar Sadewok 12 Not",             // 42
+        "Sambung Intro Nada",               // 43
+        "Sasak Raja Mandala Zeta",          // 44
+        "Sekuntum Mawar Merah 12 Not",      // 45
+        "Selamat Jalan 36 Not",             // 46
+        "Selebritis Bandung 12 Not",        // 47
+        "Sepanjang Jalan Kenangan Okdj 36 Not", // 48
+        "Seperti Mati Lampu 24 Not",        // 49
+        "Orang Baru Lebeh Gacor"            // 50
+    ];
+
+    const sounds = songNames.map((name, index) => {
+        const num = index + 1;
+        return { name: num + "). " + name, file: num + ".mp3" };
+    });
+
+    let currentIdx = 0; let currentTempo = 1.0; const audio = new Audio();
+    const playlist = document.getElementById('playlist');
+    const statMode = document.getElementById('stat-mode');
+    const statTempo = document.getElementById('stat-tempo');
+
+    function render() {
+        playlist.innerHTML = sounds.map((s, i) => `<div class="item-nada ${i === currentIdx ? 'active' : ''}" id="nada-${i}" onclick="selectSong(${i})">${s.name}</div>`).join('');
+        const activeItem = document.getElementById(`nada-${currentIdx}`);
+        if (activeItem) activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function selectSong(i) { currentIdx = i; render(); }
+
+    function control(type) {
+        switch(type) {
+            case 'PLAY': 
+                audio.src = sounds[currentIdx].file; 
+                audio.playbackRate = currentTempo; 
+                audio.play(); 
+                statMode.innerText = "MODE: PLAYING"; 
+                break;
+            case 'STOP': 
+                audio.pause(); 
+                audio.currentTime = 0; 
+                statMode.innerText = "MODE: STOP"; 
+                break;
+            case 'NEXT': 
+                currentIdx = (currentIdx + 1) % sounds.length; 
+                render(); 
+                break;
+            case 'PREV': 
+                currentIdx = (currentIdx - 1 + sounds.length) % sounds.length; 
+                render(); 
+                break;
+            case 'TEMPO_UP': 
+                if (currentTempo < 2.0) currentTempo = parseFloat((currentTempo + 0.1).toFixed(1)); 
+                audio.playbackRate = currentTempo; 
+                statTempo.innerText = `SPEED: ${currentTempo}x`; 
+                break;
+            case 'TEMPO_PREV': 
+                if (currentTempo > 0.5) currentTempo = parseFloat((currentTempo - 0.1).toFixed(1)); 
+                audio.playbackRate = currentTempo; 
+                statTempo.innerText = `SPEED: ${currentTempo}x`; 
+                break;
+        }
+    }
+
+    audio.onended = () => { currentIdx = (currentIdx + 1) % sounds.length; control('PLAY'); };
+    render();
+</script>
+</body>
+</html>
